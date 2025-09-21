@@ -1,0 +1,15 @@
+server:
+  port: 8883
+
+spring:
+  application:
+    name: Billing
+
+internal:
+  plugins:
+    dir: D:\testDir
+    watch: true       #watcher is enabled?
+    adapters:
+     enabled: [ ]        # if empty, enabled all adapter
+     disabled: [ ]       # otherwise, all are active except those listed
+

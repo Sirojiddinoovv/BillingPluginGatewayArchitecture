@@ -1,0 +1,384 @@
+{
+	"info": {
+		"_postman_id": "a0940660-9c9e-4d72-86bc-2b7449cfe3f5",
+		"name": "plugin management",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "30320944"
+	},
+	"item": [
+		{
+			"name": "get adapters",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8883/api/v1/pay/adapters",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8883",
+					"path": [
+						"api",
+						"v1",
+						"pay",
+						"adapters"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "success",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8883/api/v1/pay/adapters",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8883",
+							"path": [
+								"api",
+								"v1",
+								"pay",
+								"adapters"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": null,
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Date",
+							"value": "Sun, 21 Sep 2025 20:41:46 GMT"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=60"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": "[\n    \"UZCARD\",\n    \"HUMO\"\n]"
+				}
+			]
+		},
+		{
+			"name": "reload",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8883/api/v1/pay/reload",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8883",
+					"path": [
+						"api",
+						"v1",
+						"pay",
+						"reload"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "success",
+					"originalRequest": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8883/api/v1/pay/reload",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8883",
+							"path": [
+								"api",
+								"v1",
+								"pay",
+								"reload"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": null,
+					"header": [
+						{
+							"key": "Content-Length",
+							"value": "0"
+						},
+						{
+							"key": "Date",
+							"value": "Sun, 21 Sep 2025 20:41:45 GMT"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=60"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": null
+				}
+			]
+		},
+		{
+			"name": "uzcard debit",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"operationId\": \"operationId_ac8cb9418f53\",\r\n  \"amount\": 10,\r\n  \"currency\": \"currency_e64339d573dd\",\r\n  \"from\": \"from_0074a5403876\",\r\n  \"to\": \"to_4f98d230d734\",\r\n  \"metadata\": {}\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8883/api/v1/pay/UZCARD/debit",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8883",
+					"path": [
+						"api",
+						"v1",
+						"pay",
+						"UZCARD",
+						"debit"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "success",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"operationId\": \"operationId_ac8cb9418f53\",\r\n  \"amount\": 10,\r\n  \"currency\": \"currency_e64339d573dd\",\r\n  \"from\": \"from_0074a5403876\",\r\n  \"to\": \"to_4f98d230d734\",\r\n  \"metadata\": {}\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8883/api/v1/pay/UZCARD/debit",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8883",
+							"path": [
+								"api",
+								"v1",
+								"pay",
+								"UZCARD",
+								"debit"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": null,
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Date",
+							"value": "Sun, 21 Sep 2025 20:26:23 GMT"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=60"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"code\": \"0\",\n    \"message\": \"SUCCESS\",\n    \"payload\": {\n        \"rrn\": \"015352\"\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "humo debit",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"operationId\": \"operationId_ac8cb9418f53\",\r\n  \"amount\": 10,\r\n  \"currency\": \"currency_e64339d573dd\",\r\n  \"from\": \"from_0074a5403876\",\r\n  \"to\": \"to_4f98d230d734\",\r\n  \"metadata\": {}\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8883/api/v1/pay/HUMO/debit",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8883",
+					"path": [
+						"api",
+						"v1",
+						"pay",
+						"HUMO",
+						"debit"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "error not found",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"operationId\": \"operationId_ac8cb9418f53\",\r\n  \"amount\": 10,\r\n  \"currency\": \"currency_e64339d573dd\",\r\n  \"from\": \"from_0074a5403876\",\r\n  \"to\": \"to_4f98d230d734\",\r\n  \"metadata\": {}\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8883/api/v1/pay/HUMO/debit",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8883",
+							"path": [
+								"api",
+								"v1",
+								"pay",
+								"HUMO",
+								"debit"
+							]
+						}
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": null,
+					"header": [
+						{
+							"key": "Content-Length",
+							"value": "0"
+						},
+						{
+							"key": "Date",
+							"value": "Sun, 21 Sep 2025 20:30:26 GMT"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=60"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": null
+				},
+				{
+					"name": "success",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"operationId\": \"operationId_ac8cb9418f53\",\r\n  \"amount\": 10,\r\n  \"currency\": \"currency_e64339d573dd\",\r\n  \"from\": \"from_0074a5403876\",\r\n  \"to\": \"to_4f98d230d734\",\r\n  \"metadata\": {}\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8883/api/v1/pay/HUMO/debit",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8883",
+							"path": [
+								"api",
+								"v1",
+								"pay",
+								"HUMO",
+								"debit"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": null,
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Transfer-Encoding",
+							"value": "chunked"
+						},
+						{
+							"key": "Date",
+							"value": "Sun, 21 Sep 2025 20:42:22 GMT"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=60"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"code\": \"OK\",\n    \"message\": \"Debited via Humo\",\n    \"payload\": {\n        \"provider\": \"HUMO\",\n        \"operationId\": \"operationId_ac8cb9418f53\"\n    }\n}"
+				}
+			]
+		}
+	]
+}
