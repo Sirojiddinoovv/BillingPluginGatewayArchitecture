@@ -1,212 +1,182 @@
+# Billing: Pluggable Payments Architecture
 
-# Spring Boot Bean Scopes — `request`, `session`, `prototype`
+> Kotlin/Spring Boot plugin-based payment gateway with dynamic adapter loading and a unified adapter registry.
 
-A tiny Spring Boot project that demonstrates three bean scopes in the context of a real HTTP API:
+## Overview
 
-- **`@RequestScope`** — a new bean instance per HTTP request.
-- **`@SessionScope`** — one bean instance per *HTTP session* (persists across multiple requests from the same client).
-- **`@Scope("prototype")`** — a *new* bean instance every time it is injected/asked from the context.
+This project implements a **plugin architecture** for payment processors (Uzcard, Humo, Visa, MasterCard, ABS, etc.). Adapters are distributed as JAR plugins and discovered/loaded at runtime. The core app exposes HTTP endpoints to interact with the registry and perform operations.
 
-This repo includes a ready‑to‑use **Postman collection** with real requests, response headers, and bodies so you can reproduce the behavior.
+### Key Components
 
----
+- `plugin-architect/billing/Billing/src/main/kotlin/uz/nodir/billing/service/plugin/PluginLoader.kt` — package `uz.nodir.billing.service.plugin`; declares: PluginLoader.
+- `plugin-architect/billing/Billing/src/main/kotlin/uz/nodir/billing/service/registry/PaymentPluginRegistry.kt` — package `uz.nodir.billing.service.registry`; declares: PaymentPluginRegistry.
+- `plugin-architect/pay-common/PayCommon/src/main/kotlin/uz/nodir/paycommon/adapter/PaymentAdapter.kt` — package `uz.nodir.paycommon.adapter`; declares: PaymentAdapter.
 
-## Quick start
+## Configuration
 
-> Requires **Java 21+** (or 17+ should also work) and either Maven or Gradle.
+Configuration lives in `plugin-architect/billing/Billing/build/resources/main/application.yml`. Example:
 
-```bash
-# clone and enter
-git clone <your-repo-url>.git
-cd <your-repo-folder>
-
-# run (Maven)
-./mvnw spring-boot:run
-
-# or run (Gradle)
-./gradlew bootRun
+```yaml
+plugins:
+    dir: D:\testDir
+    watch: true       #watcher is enabled?
+    adapters:
+     enabled: [ ]        # if empty, enabled all adapter
+     disabled: [ ]       # otherwise, all are active except those listed
 ```
 
-Server will start on **http://localhost:8080**.
+### How Plugins are Loaded
 
----
 
-## Endpoints at a glance
+1. On startup, `PluginLoader` scans the configured `plugins.dir` for `*.jar` files.
+2. Each JAR is opened with a `URLClassLoader`. The loader uses `ServiceLoader<PaymentAdapter>` to discover adapters declared in `META-INF/services/uz.nodir.paycommon.adapter.PaymentAdapter` inside the plugin.
+3. Discovered adapters are registered into `PaymentPluginRegistry` keyed by `Processor` enum (`UZCARD`, `HUMO`, `VISA`, `MASTER`, `ABS`, etc.). Concurrent updates use `ConcurrentHashMap` and `putIfAbsent` to avoid duplicates.
+4. If `watch: true`, a file-watcher monitors the plugins directory and triggers reload when JARs are added/updated.
 
-| Scope          | Endpoint                      | Method | Purpose |
-|----------------|-------------------------------|--------|---------|
-| **Session**    | `/bucket`                     | GET    | Read session bucket (persists per HTTP session) |
-| **Session**    | `/bucket`                     | POST   | Add/update/remove item in the session bucket |
-| **Request**    | `/transaction/p2p`            | POST   | Echo request scoped data for a single call |
-| **Prototype**  | `/notification`               | POST   | Generates fresh values using a prototype bean |
+### SPI Contract
 
-> **Note on sessions:** To observe `@SessionScope` properly in Postman, keep the same tab and make sure the **cookie jar** is enabled so your `JSESSIONID` is reused between requests.
 
----
+Each plugin implements the `PaymentAdapter` interface and provides its `id: Processor` plus operations like `debit`, `reverse`, and `check`. Example (simplified):
 
-## API Examples (headers + bodies)
-
-> The examples below are **taken from the included Postman collection**. Timestamps will differ on your machine.
-
-### 1) Session scope — Bucket
-
-#### GET `/bucket`
-
-**Response headers**
-```
-Content-Type: application/json
-Transfer-Encoding: chunked
-Date: Sat, 23 Aug 2025 19:35:34 GMT
-Keep-Alive: timeout=60
-Connection: keep-alive
+```kotlin
+interface PaymentAdapter {
+    val id: Processor
+    fun debit(request: DebitRequest): DebitResponse
+    fun reverse(requestId: String): ReverseResponse
+    fun check(requestId: String): CheckResponse
+}
 ```
 
-**Response body**
+### Registry
+
+
+`PaymentPluginRegistry` keeps a map `Processor → PaymentAdapter`. It registers built-in beans from Spring context on startup and can accept dynamically loaded plugins:
+
+```kotlin
+@Component
+class PaymentPluginRegistry(
+  private val paymentAdapters: List<PaymentAdapter>
+) {
+  private val adapters = ConcurrentHashMap<Processor, PaymentAdapter>()
+  init { paymentAdapters.forEach { adapters.putIfAbsent(it.id, it) } }
+  fun register(adapter: PaymentAdapter) { adapters[adapter.id] = adapter }
+  fun get(processor: Processor) = adapters[processor]
+}
+```
+
+## Postman Examples
+
+**Collection:** `plugin-architect/plugin management.postman_collection.json` — *plugin management*
+
+Endpoints:
+
+- `GET http://localhost:8883/api/v1/pay/adapters` — get adapters
+  <details><summary>Sample response</summary>
+
 ```json
 [
-  { "name": "Chixol Black", "count": 1 },
-  { "name": "Samsung S25 Ultra", "count": 1 }
+    "UZCARD",
+    "HUMO"
 ]
 ```
+</details>
+- `PATCH http://localhost:8883/api/v1/pay/reload` — reload
+- `POST http://localhost:8883/api/v1/pay/UZCARD/debit` — uzcard debit
+  <details><summary>Request body</summary>
 
-**cURL**
+```json
+{
+  "operationId": "operationId_ac8cb9418f53",
+  "amount": 10,
+  "currency": "currency_e64339d573dd",
+  "from": "from_0074a5403876",
+  "to": "to_4f98d230d734",
+  "metadata": {}
+}
+```
+</details>
+  <details><summary>Sample response</summary>
+
+```json
+{
+    "success": true,
+    "code": "0",
+    "message": "SUCCESS",
+    "payload": {
+        "rrn": "015352"
+    }
+}
+```
+</details>
+- `POST http://localhost:8883/api/v1/pay/HUMO/debit` — humo debit
+  <details><summary>Request body</summary>
+
+```json
+{
+  "operationId": "operationId_ac8cb9418f53",
+  "amount": 10,
+  "currency": "currency_e64339d573dd",
+  "from": "from_0074a5403876",
+  "to": "to_4f98d230d734",
+  "metadata": {}
+}
+```
+</details>
+  <details><summary>Sample response</summary>
+
+```json
+{
+    "success": true,
+    "code": "OK",
+    "message": "Debited via Humo",
+    "payload": {
+        "provider": "HUMO",
+        "operationId": "operationId_ac8cb9418f53"
+    }
+}
+```
+</details>
+
+## Build & Run
+
+Using **Gradle**:
+
 ```bash
-curl -X GET http://localhost:8080/bucket
+./gradlew clean build
+java -jar build/libs/*.jar
 ```
 
----
+### Plugins Directory Layout
 
-#### POST `/bucket`
 
-**Request body**
-```json
-{
-  "name": "Samsung S25 Ultra",
-  "count": -2
-}
+Place adapter JARs under the configured `plugins.dir`:
 ```
-
-**Response headers**
+plugins/
+ ├─ uzcard-adapter-1.0.jar
+ ├─ humo-adapter-1.0.jar
+ └─ visa-adapter-1.0.jar
 ```
-Content-Type: application/json
-Transfer-Encoding: chunked
-Date: Sat, 23 Aug 2025 19:35:32 GMT
-Keep-Alive: timeout=60
-Connection: keep-alive
-```
+Each adapter JAR must include a `META-INF/services/uz.nodir.paycommon.adapter.PaymentAdapter` file listing the adapter implementation class.
 
-**Response body**
-```json
-[
-  { "name": "Chixol Black", "count": 1 },
-  { "name": "Samsung S25 Ultra", "count": 1 }
-]
-```
+## HTTP API (generic)
 
-**cURL**
-```bash
-curl -X POST http://localhost:8080/bucket   -H "Content-Type: application/json"   -d '{ "name": "Samsung S25 Ultra", "count": -2 }'
-```
 
-> Why session scope here? The "bucket" lives in the user's HTTP session. If you open a *new* Postman tab (or clear cookies), you'll initialize a fresh bucket.
+Common endpoints you will likely find in the collection:
+- `POST /api/payments/debit` — debit via specific `processor`.
+- `POST /api/payments/reverse` — reverse by `requestId`.
+- `GET /api/payments/check/{requestId}` — check status.
 
----
+All endpoints route internally to the `PaymentPluginRegistry` which delegates to the adapter matching the provided `processor`.
 
-### 2) Request scope — P2P transaction
+## Troubleshooting
 
-#### POST `/transaction/p2p`
 
-**Request body**
-```json
-{
-  "card": "4067070006562115",
-  "amount": 11
-}
-```
+- **Spring can't see plugin beans**: plugins are not Spring-managed; they are loaded via `ServiceLoader`. Expose them through `PaymentPluginRegistry`.
+- **ClassNotFoundException / NoClassDefFoundError**: ensure plugin JAR includes all *compile-time* deps, or shade them to avoid conflicts.
+- **Adapter not found**: verify `Processor` id matches the enum and that `enabled/disabled` config doesn't filter it out.
+- **Windows path issues**: prefer forward slashes or absolute paths for `plugins.dir`.
 
-**Response headers**
-```
-Content-Type: application/json
-Transfer-Encoding: chunked
-Date: Sat, 23 Aug 2025 19:52:08 GMT
-Keep-Alive: timeout=60
-Connection: keep-alive
-```
-
-**Response body**
-```json
-{
-  "card": "4067070006562115",
-  "amount": 11
-}
-```
-
-**cURL**
-```bash
-curl -X POST http://localhost:8080/transaction/p2p   -H "Content-Type: application/json"   -d '{ "card": "4067070006562115", "amount": 11 }'
-```
-
-> Why request scope? Each HTTP call gets a brand‑new instance that is discarded right after the response is sent.
-
----
-
-### 3) Prototype scope — Notification
-
-#### POST `/notification`
-
-**Request body**
-```json
-{
-  "phone": "998935239989",
-  "email": "nodir@gmail.com"
-}
-```
-
-**Response headers**
-```
-Content-Type: application/json
-Transfer-Encoding: chunked
-Date: Sat, 23 Aug 2025 20:29:05 GMT
-Keep-Alive: timeout=60
-Connection: keep-alive
-```
-
-**Response body (sample)**
-```json
-{
-  "data": {
-    "phone": "4dbbdcbf-8932-44f0-83de-a16e6206e296",
-    "email": "ef4d05d4-cd0a-4b34-b704-ba880568f1c6"
-  }
-}
-```
-
-**cURL**
-```bash
-curl -X POST http://localhost:8080/notification   -H "Content-Type: application/json"   -d '{ "phone": "998935239989", "email": "nodir@gmail.com" }'
-```
-
-> Why prototype? A **new** bean instance is produced each time it is requested, which is handy for one‑off generators (IDs, tokens, randomizers, etc.).
-
----
-
-## Postman
-
-The collection file lives at: **`Scope.postman_collection.json`** (included in the zip below).  
-Import it to Postman and execute the three folders: `session`, `request`, `prototype`.
-
----
-
-## FAQ
-
-- **Do I need Spring proxies?**  
-  Yes—Spring creates proxies to realize request & session scoping behind standard singleton controllers/services.
-
-- **How do I “prove” session scope works?**  
-  Hit `/bucket` several times from the *same* Postman tab: the state persists. Open a new tab (fresh cookies) to see a new, empty state.
-
----
 
 ## License
 
-MIT (or set your preferred license).
+Proprietary / internal. Update as appropriate.
